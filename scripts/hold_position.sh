@@ -26,15 +26,16 @@ NS=position_controllers
 rosparam delete $NS
 rosparam load $(rospack find tams_pr2_controller_configuration)/pr2_joint_position_controllers.yaml /$NS
 
+# TODO: we **must** stop the controller after it finished otherwise it marked the joint as uncalibrated!
 rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
 - '$NS/$C'
 strictness: 2"
-
+sleep 1.0
 rosservice call /pr2_controller_manager/unload_controller "name: '$NS/$C'"
 # give time to update parameters
 sleep 1.0
 rosservice call /pr2_controller_manager/load_controller "name: '$NS/$C'"
-
+sleep 1.0
 rosservice call /pr2_controller_manager/switch_controller "start_controllers:
 - '$NS/$C'
 strictness: 2"

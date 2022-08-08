@@ -20,8 +20,16 @@ strictness: 2"
 
 rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
 - 'position_controllers/r_elbow_flex_position_controller'
+strictness: 2"
+rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
 - 'position_controllers/r_forearm_roll_position_controller'
+strictness: 2"
+rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
 - 'position_controllers/r_shoulder_lift_position_controller'
+strictness: 2"
+rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
 - 'position_controllers/r_shoulder_pan_position_controller'
+strictness: 2"
+rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
 - 'position_controllers/r_upper_arm_roll_position_controller'
 strictness: 2"
