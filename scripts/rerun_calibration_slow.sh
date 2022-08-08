@@ -21,6 +21,14 @@ sleep 0.5
 rosservice call /pr2_controller_manager/load_controller "name: '$NS/$C'"
 sleep 0.5
 
+# stop calibration controller on shutdown
+trap ctrl_c INT SIGTERM
+ctrl_c() {
+  rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
+- '$NS/$C'
+strictness: 2"
+}
+
 echo "starting calibration controller for $J every $S seconds"
 while true
 do
