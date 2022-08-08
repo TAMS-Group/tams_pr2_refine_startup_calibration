@@ -1,6 +1,6 @@
 #!/bin/bash
 
-J="${1:-r_elbow_flex}"
+# start position controller for joint and
 
 declare -A hold_positions
 hold_positions[r_elbow_flex]=-1.57
@@ -8,6 +8,12 @@ hold_positions[r_forearm_roll]=0.0
 hold_positions[r_shoulder_lift]=0.0
 hold_positions[r_upper_arm_roll]=0.0
 hold_positions[r_shoulder_pan]=0.0
+
+if [[ -z "$1" ]]; then
+  echo "error: no joint name specified as command line parameter" >&2
+  exit 1
+fi
+J="$1"
 
 if [[ -z "${hold_positions[$J]}" ]]; then
   echo "error: no hold position defined for joint $J" >&2

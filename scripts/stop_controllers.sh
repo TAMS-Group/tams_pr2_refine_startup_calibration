@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# stop all controllers that might get into the way of calibration
+
 rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
 - 'r_arm_controller'
 - 'l_arm_controller'

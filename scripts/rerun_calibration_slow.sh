@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# run calibration controller in endless loop to repeatedly detect zero offset (published as topic)
+
 J="${1:-r_elbow_flex}"
 
 C="cal_$J"
@@ -7,7 +9,7 @@ S=4
 NS=calibration_slow_controllers
  
 rosparam delete /$NS
-rosparam load $(rospack find tams_pr2_controller_configuration)/pr2_calibration_controllers_slow.yaml /$NS
+rosparam load $(rospack find tams_pr2_refine_startup_calibration)/config/pr2_calibration_controllers_slow.yaml /$NS
 
 rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
 - '$NS/$C'
