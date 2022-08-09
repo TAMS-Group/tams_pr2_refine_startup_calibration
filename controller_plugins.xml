@@ -1,0 +1,3 @@
+<library path="lib/libtams_pr2_refine_startup_calibration">
+  <class name="tams_pr2_refine_startup_calibration/SetZeroOffsetController" type="controller::SetZeroOffsetController" base_class_type="pr2_controller_interface::Controller" />
+</library>
