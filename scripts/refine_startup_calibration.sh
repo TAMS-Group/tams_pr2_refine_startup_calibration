@@ -83,10 +83,11 @@ EOF
 rosrun $PKG zero_offset_histogram.py >/dev/null 2>&1 &
 HISTOGRAM_PLOT_PID=$!
 
-trap shutdown_histogram INT TERM EXIT
-shutdown_histogram() {
+trap shutdown_hook INT TERM EXIT
+shutdown_hook() {
   # if only INT/TERM would work for python ROS nodes...
-  kill -KILL $HISTOGRAM_PLOT_PID
+  kill -KILL $HISTOGRAM_PLOT_PID >/dev/null 2>&1
+  rosrun $PKG unload_helper_controllers.sh >/dev/null 2>&1
   exit 0
 }
 
