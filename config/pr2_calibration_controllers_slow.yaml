@@ -4,6 +4,7 @@ cal_r_shoulder_pan:
   actuator: r_shoulder_pan_motor
   transmission: r_shoulder_pan_trans
   velocity: 0.2
+  tics_moving_past_calibration_reading: 1500
   pid:
     p: 7
     i: 0.5
@@ -15,6 +16,7 @@ cal_r_shoulder_lift:
   actuator: r_shoulder_lift_motor
   transmission: r_shoulder_lift_trans
   velocity: 0.2
+  tics_moving_past_calibration_reading: 1500
   pid:
     p: 25
     i: 0.6
@@ -26,6 +28,7 @@ cal_r_upper_arm_roll:
   actuator: r_upper_arm_roll_motor
   transmission: r_upper_arm_roll_trans
   velocity: 0.2
+  tics_moving_past_calibration_reading: 1500
   pid:
     p: 8
     i: 1.5
@@ -37,6 +40,7 @@ cal_r_elbow_flex:
   actuator: r_elbow_flex_motor
   transmission: r_elbow_flex_trans
   velocity: 0.20 # keep process value at lowest reported velocity
+  tics_moving_past_calibration_reading: 1500
   pid:
     p: 5
     i: 0.8
@@ -48,6 +52,7 @@ cal_r_forearm_roll:
   actuator: r_forearm_roll_motor
   transmission: r_forearm_roll_trans
   velocity: 0.1 # lowest reported velocity
+  tics_moving_past_calibration_reading: 1500
   pid:
     p: 8.0
     i: 1.0
