@@ -39,7 +39,7 @@ cal_r_elbow_flex:
   velocity: 0.20 # keep process value at lowest reported velocity
   pid:
     p: 5
-    i: 0.2
+    i: 0.8
     d: 0
     i_clamp: 6.0
 cal_r_forearm_roll:
