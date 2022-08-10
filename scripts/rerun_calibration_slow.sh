@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # run calibration controller in endless loop to repeatedly detect zero offset (published as topic)
+# reload configuration file in case someone changed parameters
 
 J="${1:-r_elbow_flex}"
 
