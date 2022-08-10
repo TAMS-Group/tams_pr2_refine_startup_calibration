@@ -63,6 +63,7 @@ protected:
   ros::NodeHandle node_;
   ros::ServiceServer set_zero_offset_srv_;
   ros::ServiceServer get_zero_offset_srv_;
+
   bool new_zero_offset_available_;
   double new_zero_offset_;
 
@@ -72,7 +73,10 @@ protected:
 };
 
 SetZeroOffsetController::SetZeroOffsetController()
-: actuator_(NULL)
+: new_zero_offset_available_{ false },
+  new_zero_offset_{ 0.0 },
+  actuator_{ nullptr },
+  joint_{ nullptr }
 {
 }
 
@@ -119,6 +123,7 @@ bool SetZeroOffsetController::init(pr2_mechanism_model::RobotState *robot, ros::
 
 void SetZeroOffsetController::starting()
 {
+  new_zero_offset_available_ = false;
 }
 
 void SetZeroOffsetController::stopping()
