@@ -8,7 +8,7 @@ r_elbow_flex
 r_forearm_roll
 "
 
-rosparam load `rospack find $PKG`/config/pr2_set_zero_offset_controllers.yaml
+rosparam load `rospack find tams_pr2_refine_startup_calibration`/config/pr2_set_zero_offset_controllers.yaml
 
 for j in $JOINTS; do
   rosservice call /pr2_controller_manager/load_controller "name: 'zero_offset/$j'"
