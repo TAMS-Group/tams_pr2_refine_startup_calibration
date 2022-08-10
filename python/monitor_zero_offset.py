@@ -23,7 +23,7 @@ class MonitorOffset:
             rospy.logerr("Cannot estimate reasonable mean from less than 3 samples")
             return EmptyResponse()
         (mu, sigma) = norm.fit(self.offsets)
-        rospy.loginfo("Fit mean {} with sigma {}".format(mu, sigma))
+        rospy.logdebug("Fit mean {} with sigma {}".format(mu, sigma))
 
         try:
             set_zero_offset = rospy.ServiceProxy('set_zero_offset', SetZeroOffset)
