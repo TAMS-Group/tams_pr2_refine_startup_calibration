@@ -5,6 +5,7 @@ import rospy
 
 from std_msgs.msg import Float32
 from std_srvs.srv import Empty as EmptyService, EmptyResponse
+from tams_pr2_refine_startup_calibration.srv import SetZeroOffset
 
 from scipy.stats import norm
 
@@ -22,13 +23,13 @@ class MonitorOffset:
             rospy.logerr("Cannot estimate reasonable mean from less than 3 samples")
             return EmptyResponse()
         (mu, sigma) = norm.fit(self.offsets)
-        print("Fit mean {} with sigma {}".format(mu, sigma))
-        # TODO: call service on custom controller to set zero_offset to mu
-        #try:
-        #    set_zero_offset = rospy.ServiceProxy('set_zero_offset', SetOffset)
-        #    set_zero_offset(mu) 
-        #except rospy.ServiceException as e:
-        #    rospy.logerr("Failed to set zero offset")
+        rospy.loginfo("Fit mean {} with sigma {}".format(mu, sigma))
+
+        try:
+            set_zero_offset = rospy.ServiceProxy('set_zero_offset', SetZeroOffset)
+            set_zero_offset(mu)
+        except rospy.ServiceException as e:
+            rospy.logerr("Failed to set zero offset: {}".format(e))
         return EmptyResponse()
 
 if __name__ == "__main__":
