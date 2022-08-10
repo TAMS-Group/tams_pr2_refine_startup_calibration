@@ -4,6 +4,11 @@
 
 PKG=tams_pr2_refine_startup_calibration
 
+cat <<EOF
+========
+Loading helper controllers...
+EOF
+
 # load controllers to set zero offsets
 rosrun $PKG start_set_zero_offset_controllers.sh >/dev/null 2>&1
 
@@ -31,17 +36,17 @@ refine_joint() {
   J=$1
   cat <<EOF
 ========
-Going to run recalibration (in endless loop)
-for joint ${J}.
-Please make sure the robot is in the expected configuration
-for this calibration step.
+Going to run recalibration (in endless loop) for joint ${J}.
+Please make sure the robot is in the expected configuration for this calibration step.
 Press Enter to continue
 EOF
   read
 
   ROS_NAMESPACE=/calibration_slow_controllers/cal_$J \
     rosrun $PKG monitor_zero_offset.py \
-      set_zero_offset_from_mean:=/monitor_zero_offset/set_zero_offset_from_mean &
+      set_zero_offset_from_mean:=/monitor_zero_offset/set_zero_offset_from_mean \
+      set_zero_offset:=/zero_offset/$J/set_zero_offset \
+      &
   MONITOR_OFFSET_PID=$!
 
   rosrun topic_tools relay \
@@ -53,7 +58,6 @@ EOF
   CAL_PID=$!
 
   cat <<EOF
-========
 Recalibration for ${J} is running.
 Press Enter to abort the loop and write the mean of all trials as offset.
 EOF
@@ -61,7 +65,7 @@ EOF
 
   echo "Killing recalibration routine"
   kill -TERM $CAL_PID
-  sleep 1.0
+  sleep 3.0
 
   kill -TERM $OFFSET_RELAY_PID
 
