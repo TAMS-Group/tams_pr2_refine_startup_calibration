@@ -83,6 +83,10 @@ trap shutdown_hook INT TERM EXIT
 shutdown_hook() {
   # if only INT/TERM would work for python ROS nodes...
   kill -KILL $HISTOGRAM_PLOT_PID >/dev/null 2>&1
+  cat <<EOF
+========
+Finally unload all zero_offset and calibration controllers.
+EOF
   rosrun $PKG unload_helper_controllers.sh >/dev/null 2>&1
   exit 0
 }
