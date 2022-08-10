@@ -1,23 +1,24 @@
-zero_offset_r_shoulder_pan:
-  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
-  joint: r_shoulder_pan_joint
-  actuator: r_shoulder_pan_motor
-zero_offset_r_shoulder_lift:
-  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
-  joint: r_shoulder_lift_joint
-  actuator: r_shoulder_lift_motor
-cal_r_upper_arm_roll:
-  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
-  joint: r_upper_arm_roll_joint
-  actuator: r_upper_arm_roll_motor
-cal_r_elbow_flex:
-  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
-  joint: r_elbow_flex_joint
-  actuator: r_elbow_flex_motor
-cal_r_forearm_roll:
-  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
-  joint: r_forearm_roll_joint
-  actuator: r_forearm_roll_motor
+zero_offset:
+  r_shoulder_pan:
+    type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+    joint: r_shoulder_pan_joint
+    actuator: r_shoulder_pan_motor
+  r_shoulder_lift:
+    type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+    joint: r_shoulder_lift_joint
+    actuator: r_shoulder_lift_motor
+  r_upper_arm_roll:
+    type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+    joint: r_upper_arm_roll_joint
+    actuator: r_upper_arm_roll_motor
+  r_elbow_flex:
+    type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+    joint: r_elbow_flex_joint
+    actuator: r_elbow_flex_motor
+  r_forearm_roll:
+    type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+    joint: r_forearm_roll_joint
+    actuator: r_forearm_roll_motor
 
 #####################################################
 # TODO: specify controllers for all other joints to #
