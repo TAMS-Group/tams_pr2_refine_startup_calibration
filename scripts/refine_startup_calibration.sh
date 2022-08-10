@@ -67,7 +67,7 @@ EOF
   kill -TERM $OFFSET_RELAY_PID
 
   echo -n "Writing result to MCB... "
-  rosservice call /monitor_zero_offset/set_zero_offset_from_mean && echo "success" || echo "failed"
+  rosservice call /monitor_zero_offset/set_zero_offset_from_mean >/dev/null 2>&1 && echo "success" || echo "failed"
   kill $MONITOR_OFFSET_PID
 
   rosservice call /zero_offset_histogram/reset
