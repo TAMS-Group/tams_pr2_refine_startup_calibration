@@ -20,11 +20,9 @@ cat <<EOF
 Going to stop all running controllers on the PR2.
 The arms/head will drop towards gravity, so make sure
 they will not hit anything and the head will fall backwards.
-
-Press Enter to proceed
 EOF
+echo -en "\nPress Enter to proceed"; read
 
-read
 sleep 2.0
 rosrun $PKG stop_controllers.sh >/dev/null 2>&1
 cat <<EOF
@@ -38,10 +36,8 @@ refine_joint() {
 ========
 Going to run recalibration (in endless loop) for joint ${J}.
 Please make sure the robot is in the expected configuration for this calibration step.
-
-Press Enter to proceed
 EOF
-  read
+  echo -en "\nPress Enter to proceed"; read
 
   ROS_NAMESPACE=/calibration_slow_controllers/cal_$J \
     rosrun $PKG monitor_zero_offset.py \
@@ -107,12 +103,10 @@ EOF
     cat <<EOF
 ========
 Moving $1 to hold position. Proceed with caution.
-
-Press Enter to proceed
 EOF
   fi
 
-  read
+  echo -en "\nPress Enter to proceed"; read
 
   rosrun $PKG hold_position.sh $1 >/dev/null 2>&1
 } 
@@ -131,10 +125,8 @@ cat <<EOF
 ========
 Recalibration complete. Starting trajectory controllers back up.
 Switching off position controllers to do that, so the arms will drop in between.
-
-Press Enter to proceed
 EOF
-read
+echo -en "\nPress Enter to proceed"; read
 
 rosrun $PKG stop_controllers.sh >/dev/null 2>&1
 rosrun $PKG start_trajectory_controllers.sh >/dev/null 2>&1
