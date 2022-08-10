@@ -79,7 +79,7 @@ class OnlineHist(PlotWindow):
         # best fit of data
         (mu, sigma) = norm.fit(list(self.values))
         # add a 'best fit' line
-        y = norm.pdf( bins, mu, sigma)
+        y = norm.pdf( bins, mu, sigma) / norm.pdf(mu, mu, sigma) * np.max(n)
         l = self.axes.plot(bins, y, 'r--', linewidth=2)
 
         #self.axes.set_xticks(bins[:-1])
