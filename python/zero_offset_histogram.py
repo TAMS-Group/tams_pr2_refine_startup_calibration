@@ -55,6 +55,8 @@ class OnlineHist(PlotWindow):
 
   def resetClicked(self):
     self.values.clear()
+    self.axes.clear()
+    self.canvas.draw()
     self.index=0       
     self.paused = False
     return
