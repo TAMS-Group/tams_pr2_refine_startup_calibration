@@ -110,7 +110,7 @@ Moving $1 to hold position. Proceed with caution.
 EOF
   fi
 
-  echo -en "\nPress Enter to proceed"; read; echo "Proceeding now"
+#  echo -en "\nPress Enter to proceed"; read; echo "Proceeding now"
 
   rosrun $PKG hold_position.sh $1 >/dev/null 2>&1
 } 
