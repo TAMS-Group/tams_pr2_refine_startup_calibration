@@ -14,7 +14,7 @@ rosparam load $(rospack find tams_pr2_refine_startup_calibration)/config/pr2_cal
 
 rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
 - '$NS/$C'
-strictness: 2"
+strictness: 1"
 sleep 1.0
 rosservice call /pr2_controller_manager/unload_controller "name: '$NS/$C'"
 # give time to update parameters
@@ -27,7 +27,7 @@ trap ctrl_c INT SIGTERM
 ctrl_c() {
   rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
 - '$NS/$C'
-strictness: 2"
+strictness: 1"
   exit 0
 }
 

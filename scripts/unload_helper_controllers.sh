@@ -14,7 +14,7 @@ for j in $JOINTS; do
   query="${query}\n- 'zero_offset/$j'"
   query="${query}\n- 'calibration_slow_controllers/cal_$j'"
 done
-query="$query\nstrictness: 2"
+query="$query\nstrictness: 1"
 
 rosservice call /pr2_controller_manager/switch_controller "$(printf "$query")"
 
