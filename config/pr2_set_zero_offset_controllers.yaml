@@ -19,7 +19,36 @@ r_forearm_roll:
   joint: r_forearm_roll_joint
   actuator: r_forearm_roll_motor
 
-#####################################################
-# TODO: specify controllers for all other joints to #
-# -- v4hn@20220809                                  #
-#####################################################
+l_shoulder_pan:
+  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+  joint: l_shoulder_pan_joint
+  actuator: l_shoulder_pan_motor
+l_shoulder_lift:
+  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+  joint: l_shoulder_lift_joint
+  actuator: l_shoulder_lift_motor
+l_upper_arm_roll:
+  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+  joint: l_upper_arm_roll_joint
+  actuator: l_upper_arm_roll_motor
+l_elbow_flex:
+  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+  joint: l_elbow_flex_joint
+  actuator: l_elbow_flex_motor
+l_forearm_roll:
+  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+  joint: l_forearm_roll_joint
+  actuator: l_forearm_roll_motor
+#l_wrist_flex:
+#  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+#  joint: l_wrist_flex_joint
+#  actuator: TODO: there are two, so this can't work
+#l_wrist_roll:
+#  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+#  joint: l_wrist_roll_joint
+#  actuator: TODO: see above
+
+##################################
+# TODO: include the head joints? #
+# -- v4hn@20231208               #
+##################################

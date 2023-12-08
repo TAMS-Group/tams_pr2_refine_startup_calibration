@@ -9,6 +9,12 @@ hold_positions[r_shoulder_lift]=0.0
 hold_positions[r_upper_arm_roll]=0.0
 hold_positions[r_shoulder_pan]=0.0
 
+hold_positions[l_elbow_flex]=-1.57
+hold_positions[l_forearm_roll]=0.0
+hold_positions[l_shoulder_lift]=0.0
+hold_positions[l_upper_arm_roll]=0.0
+hold_positions[l_shoulder_pan]=0.0
+
 if [[ -z "$1" ]]; then
   echo "error: no joint name specified as command line parameter" >&2
   exit 1

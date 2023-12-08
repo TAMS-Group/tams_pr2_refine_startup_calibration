@@ -59,66 +59,72 @@ cal_r_forearm_roll:
     d: 0.0
     i_clamp: 12.0
 
-#############################################################
-## TODO: nothing below here is slower yet, needs evaluation #
-## -- v4hn@20220808                                         #
-#############################################################
+cal_l_shoulder_pan:
+  type: pr2_calibration_controllers/JointCalibrationController
+  joint: l_shoulder_pan_joint
+  actuator: l_shoulder_pan_motor
+  transmission: l_shoulder_pan_trans
+  velocity: 0.2
+  tics_moving_past_calibration_reading: 1500
+  pid:
+    p: 7
+    i: 0.5
+    d: 0
+    i_clamp: 2.0
+cal_l_shoulder_lift:
+  type: pr2_calibration_controllers/JointCalibrationController
+  joint: l_shoulder_lift_joint
+  actuator: l_shoulder_lift_motor
+  transmission: l_shoulder_lift_trans
+  velocity: 0.2
+  tics_moving_past_calibration_reading: 1500
+  pid:
+    p: 25
+    i: 0.6
+    d: 0.0
+    i_clamp: 10
+cal_l_upper_arm_roll:
+  type: pr2_calibration_controllers/JointCalibrationController
+  joint: l_upper_arm_roll_joint
+  actuator: l_upper_arm_roll_motor
+  transmission: l_upper_arm_roll_trans
+  velocity: 0.2
+  tics_moving_past_calibration_reading: 1500
+  pid:
+    p: 8
+    i: 1.5
+    d: 0
+    i_clamp: 4
+cal_l_elbow_flex:
+  type: pr2_calibration_controllers/JointCalibrationController
+  joint: l_elbow_flex_joint
+  actuator: l_elbow_flex_motor
+  transmission: l_elbow_flex_trans
+  velocity: 0.20 # keep process value at lowest reported velocity
+  tics_moving_past_calibration_reading: 1500
+  pid:
+    p: 5
+    i: 0.8
+    d: 0
+    i_clamp: 6.0
+cal_l_forearm_roll:
+  type: pr2_calibration_controllers/JointCalibrationController
+  joint: l_forearm_roll_joint
+  actuator: l_forearm_roll_motor
+  transmission: r_forearm_roll_trans
+  velocity: 0.1 # lowest reported velocity
+  tics_moving_past_calibration_reading: 1500
+  pid:
+    p: 8.0
+    i: 1.0
+    d: 0.0
+    i_clamp: 12.0
+
+#################################################################
+## TODO: possibly include some below, but they are less crucial #
+## -- v4hn@20220808                                             #
+#################################################################
 #
-#cal_l_shoulder_pan:
-#  type: pr2_calibration_controllers/JointCalibrationController
-#  joint: l_shoulder_pan_joint
-#  actuator: l_shoulder_pan_motor
-#  transmission: l_shoulder_pan_trans
-#  velocity: 1.0
-#  pid:
-#    p: 7
-#    i: 0.5
-#    d: 0
-#    i_clamp: 1.0
-#cal_l_shoulder_lift:
-#  type: pr2_calibration_controllers/JointCalibrationController
-#  joint: l_shoulder_lift_joint
-#  actuator: l_shoulder_lift_motor
-#  transmission: l_shoulder_lift_trans
-#  velocity: 1.0
-#  pid:
-#    p: 9
-#    i: 1.0
-#    d: 0
-#    i_clamp: 10
-#cal_l_upper_arm_roll:
-#  type: pr2_calibration_controllers/JointCalibrationController
-#  joint: l_upper_arm_roll_joint
-#  actuator: l_upper_arm_roll_motor
-#  transmission: l_upper_arm_roll_trans
-#  velocity: 1.5
-#  pid:
-#    p: 6
-#    i: 0.2
-#    d: 0
-#    i_clamp: 2
-#cal_l_elbow_flex:
-#  type: pr2_calibration_controllers/JointCalibrationController
-#  joint: l_elbow_flex_joint
-#  actuator: l_elbow_flex_motor
-#  transmission: l_elbow_flex_trans
-#  velocity: 1.0
-#  pid:
-#    p: 6
-#    i: 0.2
-#    d: 0
-#    i_clamp: 1
-#cal_l_forearm_roll:
-#  type: pr2_calibration_controllers/JointCalibrationController
-#  joint: l_forearm_roll_joint
-#  actuator: l_forearm_roll_motor
-#  transmission: l_forearm_roll_trans
-#  velocity: 1.2
-#  pid:
-#    p: 5.0
-#    i: 0.0
-#    d: 0.0
-#    i_clamp: 0.0
 #cal_l_wrist:
 #  type: pr2_calibration_controllers/WristCalibrationController
 #  actuator_l: l_wrist_l_motor

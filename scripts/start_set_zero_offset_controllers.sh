@@ -6,6 +6,11 @@ r_shoulder_lift
 r_upper_arm_roll
 r_elbow_flex
 r_forearm_roll
+l_shoulder_pan
+l_shoulder_lift
+l_upper_arm_roll
+l_elbow_flex
+l_forearm_roll
 "
 
 rosparam load `rospack find tams_pr2_refine_startup_calibration`/config/pr2_set_zero_offset_controllers.yaml /zero_offset
