@@ -24,9 +24,9 @@ rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
 strictness: 1"
 
 rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
-- 'zero_effort/r_elbow_flex'
-- 'zero_effort/r_forearm_roll'
-- 'zero_effort/r_shoulder_lift'
-- 'zero_effort/r_shoulder_pan'
-- 'zero_effort/r_upper_arm_roll'
+- 'zero_offset/r_elbow_flex'
+- 'zero_offset/r_forearm_roll'
+- 'zero_offset/r_shoulder_lift'
+- 'zero_offset/r_shoulder_pan'
+- 'zero_offset/r_upper_arm_roll'
 strictness: 1"
