@@ -39,6 +39,16 @@ l_forearm_roll:
   type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
   joint: l_forearm_roll_joint
   actuator: l_forearm_roll_motor
+
+head_pan:
+  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+  joint: head_pan_joint
+  actuator: head_pan_motor
+head_tilt:
+  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
+  joint: head_tilt_joint
+  actuator: head_tilt_motor
+
 #l_wrist_flex:
 #  type: tams_pr2_refine_startup_calibration/SetZeroOffsetController
 #  joint: l_wrist_flex_joint
@@ -48,7 +58,7 @@ l_forearm_roll:
 #  joint: l_wrist_roll_joint
 #  actuator: TODO: see above
 
-##################################
-# TODO: include the head joints? #
-# -- v4hn@20231208               #
-##################################
+#################################################################################
+# TODO: wrist 'calibration' is more difficult due to the differential mechanism #
+# -- v4hn@20231208                                                              #
+#################################################################################
