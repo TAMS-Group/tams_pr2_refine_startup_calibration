@@ -4,6 +4,28 @@
 
 PKG=tams_pr2_refine_startup_calibration
 
+if [[ -z "$1" ]]; then
+  echo "usage: $0 {left_arm,right_arm,joint_name}"
+  exit 1
+fi
+
+JOINTS=""
+
+while [[ -n "$1" ]]; do
+  case $1 in
+  right_arm)
+    JOINTS+=" r_elbow_flex r_forearm_roll r_shoulder_lift r_upper_arm_roll r_shoulder_pan"
+    ;;
+  left_arm)
+    JOINTS+=" l_elbow_flex l_forearm_roll l_shoulder_lift l_upper_arm_roll l_shoulder_pan"
+    ;;
+  *)
+    JOINTS+=" $1"
+    ;;
+  esac
+  shift
+done
+
 cat <<EOF
 ========
 Loading helper controllers...
@@ -97,33 +119,17 @@ EOF
 refine_and_hold() {
   refine_joint $1
 
-  if [[ -n "$refine_first_joint" ]]; then
-    cat <<EOF
+  cat <<EOF
 ========
-Moving r_elbow_flex to hold position. This directly starts a PID position controller,
-so the motion will be fast unless the joint is already close to the target.
+Will move $1 to hold position now.
 EOF
-  else
-    cat <<EOF
-========
-Moving $1 to hold position. Proceed with caution.
-EOF
-  fi
-
-#  echo -en "\nPress Enter to proceed"; read; echo "Proceeding now"
-
   rosrun $PKG hold_position.sh $1 >/dev/null 2>&1
 } 
 
-refine_and_hold r_elbow_flex
-
-refine_and_hold r_forearm_roll
-
-refine_and_hold r_shoulder_lift
-
-refine_and_hold r_upper_arm_roll
-
-refine_and_hold r_shoulder_pan
+for j in $JOINTS
+do
+  refine_and_hold $j
+done
 
 cat <<EOF
 ========
