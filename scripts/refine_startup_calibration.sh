@@ -26,6 +26,11 @@ while [[ -n "$1" ]]; do
   shift
 done
 
+say(){
+  rostopic pub -1 /say std_msgs/String "data: '$@'" >/dev/null 2>&1 &
+  sleep 1.0
+}
+
 cat <<EOF
 ========
 Loading helper controllers...
@@ -43,6 +48,9 @@ Going to stop all running controllers on the PR2.
 The arms/head will drop towards gravity, so make sure
 they will not hit anything and the head will fall backwards.
 EOF
+
+say "Going to stop all controllers. Please press enter to confirm"
+
 echo -en "\nPress Enter to proceed"; read; echo "Proceeding now"
 
 sleep 2.0
@@ -54,11 +62,13 @@ EOF
 
 refine_joint() {
   J=$1
+
   cat <<EOF
 ========
 Going to run recalibration (in endless loop) for joint ${J}.
 Please make sure the robot is in the expected configuration for this calibration step.
 EOF
+  say "Going to recalibrate joint ${J}. Please press enter to start"
   echo -en "\nPress Enter to proceed"; read; echo "Proceeding now"
 
   ROS_NAMESPACE=/calibration_slow_controllers/cal_$J \
@@ -123,6 +133,7 @@ refine_and_hold() {
 ========
 Will move $1 to hold position now.
 EOF
+  say "will move the joint its hold position now."
   rosrun $PKG hold_position.sh $1 >/dev/null 2>&1
 } 
 
@@ -136,6 +147,8 @@ cat <<EOF
 Recalibration complete. Starting trajectory controllers back up.
 Switching off position controllers to do that, so the arms will drop in between.
 EOF
+
+say "All joints refined. Press enter to switch to trajectory controllers. The joints will be briefly uncontrolled."
 echo -en "\nPress Enter to proceed"; read; echo "Proceeding now"
 
 rosrun $PKG stop_controllers.sh >/dev/null 2>&1
