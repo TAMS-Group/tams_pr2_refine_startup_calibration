@@ -15,6 +15,8 @@ rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
 - 'l_arm_controller_loose'
 strictness: 1"
 
+# TODO: this does not stop the left arm controllers and we really don't want that either. Redesign process please
+
 rosservice call /pr2_controller_manager/switch_controller "stop_controllers:
 - 'position_controllers/r_elbow_flex_position_controller'
 - 'position_controllers/r_forearm_roll_position_controller'
