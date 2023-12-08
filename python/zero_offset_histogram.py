@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import QApplication
 import numpy
 import numpy as np
 
+import seaborn as sns
 from matplotlib.ticker import MaxNLocator
 from scipy.stats import norm
 from collections import deque
@@ -73,18 +74,18 @@ class OnlineHist(PlotWindow):
 
     if not self.paused:
         self.axes.clear()
-        #b= np.unique(np.sort(np.round(self.values, decimals=6)))
-        b= 100
-        n, bins, patches = self.axes.hist(list(self.values), bins = b, facecolor='green', alpha=0.75, align='left')
+        varr = np.array(self.values)
+        sns.stripplot(varr, jitter=True, ax= self.axes)
 
         #I want to also fit the data to a Gaussian
         # best fit of data
-        (mu, sigma) = norm.fit(list(self.values))
+        (mu, sigma) = norm.fit(varr)
+        self.axes.axvline(x= mu, color='r')
         # add a 'best fit' line
-        y = norm.pdf( bins, mu, sigma) / norm.pdf(mu, mu, sigma) * np.max(n)
-        l = self.axes.plot(bins, y, 'r--', linewidth=2)
+        #gridx = np.linspace(varr.min(), varr.max(), 500)
+        #y = norm.pdf(gridx, mu, sigma) / norm.pdf(mu, mu, sigma) * np.max(varr.max())
+        #l = self.axes.plot(gridx, y, 'r--', linewidth=2)
 
-        #self.axes.set_xticks(bins[:-1])
         self.axes.set_title(r'$\mathrm{Histogram\ of\ Range:}\ \mu=%.3f,\ \sigma=%.3f$' %(mu, sigma))
         self.axes.set_xlabel("Value")
         self.axes.set_ylabel("Frequency")
