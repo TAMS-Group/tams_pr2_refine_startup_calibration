@@ -208,7 +208,9 @@ class RefineStartupCalibration:
             sys.exit(1)
 
         self.switch_to_trajectory_controller(group)
-        rospy.sleep(rospy.Duration(1.0))
+        if not self.trajectory_clients[group].wait_for_server(timeout= rospy.Duration(2.0)):
+            rospy.logfatal(f"Failed to connect to trajectory action server for {group}")
+            sys.exit(1)
 
         jt = JointTrajectory()
         jt.joint_names = joints
@@ -220,49 +222,55 @@ class RefineStartupCalibration:
             say(f"Ooops, group {group} could not move. Please press enter to continue nevertheless.")
             input("Press enter to continue...")
 
-    def start_calibration_controller_for_refine(self, joint):
+    def trigger_calibration_controller_during_refine(self, joint, *, start : bool):
+        to_start = [f"calibration_controllers_for_refine/{joint}"]
+        to_stop = [f"position_controllers/{joint}_position_controller"]
+
+        if not start:
+            to_start, to_stop = to_stop, to_start
+
         if not self.switch_controller(
-            start_controllers= [f"calibration_controllers_for_refine/{joint}"],
-            stop_controllers= [f"position_controllers/{joint}_position_controller"],
+            start_controllers= to_start,
+            stop_controllers= to_stop,
             strictness= SwitchControllerRequest.STRICT
         ).ok:
-            rospy.logfatal(f"Failed to start calibration controller for {joint}")
+            rospy.logfatal(f"Failed to {'start' if start else 'stop'} calibration controller for {joint}")
             sys.exit(1)
 
     def refine_joint(self, joint):
-        # start calibration controller and wait for /calibrated message
-
-        stop_refinement = threading.Event()
-        new_zero_offset = threading.Event()
         zero_offsets = []
-
+        new_zero_offset = threading.Event()
         def zero_offset_cb(msg):
             nonlocal new_zero_offset, zero_offsets
             zero_offsets.append(msg.data)
             new_zero_offset.set()
+        sub = rospy.Subscriber(f"calibration_controllers_for_refine/{joint}/zero_offset", Float32Msg, callback= zero_offset_cb)
 
+        stop_refinement = threading.Event()
         def repeated_refinement():
-            nonlocal stop_refinement, new_zero_offset, zero_offsets
-            sub = rospy.Subscriber(f"calibration_controllers_for_refine/{joint}/zero_offset", Float32Msg, callback= zero_offset_cb)
+            nonlocal stop_refinement, new_zero_offset
             while not stop_refinement.is_set():
-                self.start_calibration_controller_for_refine(joint)
+                self.trigger_calibration_controller_during_refine(joint, start= True)
 
-                # wait for new zero_offset
                 while not new_zero_offset.wait(timeout= .1):
                     if rospy.is_shutdown():
-                        raise Exception("Interrupted")
+                        rospy.loginfo('Shutting down')
+                        sys.exit(1)
                     if stop_refinement.is_set():
                         break
                 new_zero_offset.clear()
-            sub.unregister()
+
+                self.trigger_calibration_controller_during_refine(joint, start= False)
+                rospy.sleep(rospy.Duration(0.1))
 
         repeated_refinement_thread = threading.Thread(target= repeated_refinement).start()
         input("Press enter when enough samples are collected...")
+        sub.unregister()
         stop_refinement.set()
         repeated_refinement_thread.join()
 
-        if not rospy.ServiceProxy(f"set_zero_offset/{joint}", SetZeroOffset)(SetZeroOffsetRequest(offset= np.mean(zero_offsets))):
-            rospy.logfatal(f"Failed to set zero offset for {joint}")
+        if not rospy.ServiceProxy(f"set_zero_offset/{joint}/set_zero_offset", SetZeroOffset)(SetZeroOffsetRequest(offset= np.mean(zero_offsets))):
+            rospy.logfatal(f"Failed to set averaged zero offset for {joint}")
             sys.exit(1)
 
     def refine_group_joints(self, group, joints):
@@ -271,19 +279,20 @@ class RefineStartupCalibration:
         '''
 
         for j in joints:
-            say(f"Refine joint {joints}")
+            say(f"Refining joint {j}")
             self.switch_to_trajectory_controller(group)
+
             if j not in self.CALIBRATION_GROUP_POSITIONS:
                 rospy.logfatal(f"Missing group calibration position for {j}. Cannot refine the joint.")
                 sys.exit(1)
-
             group_position_for_j = self.CALIBRATION_GROUP_POSITIONS[j]
+
             say(f"Will move {group} to calibration position for {j}. Please press enter.")
             rospy.loginfo(f"Will move {group} to calibration position for {j}.")
             input("Press enter to continue...")
-            rospy.sleep(rospy.Duration(1.0))
 
             self.move_to_group_positions(group, group_position_for_j)
+
             self.switch_to_position_controllers(group)
 
             self.refine_joint(j)
@@ -307,14 +316,16 @@ class RefineStartupCalibration:
             rosparam.upload_params(ns,params)
         calibration_controllers_for_refine = [f"calibration_controllers_for_refine/{j}" for j in joints]
 
-        for params, ns in rosparam.load_file(rpack.get_path('tams_pr2_controller_configuration') + '/config/pr2_joint_position_controllers.yaml', namespace='/position_controllers')
+        for params, ns in rosparam.load_file(rpack.get_path('tams_pr2_controller_configuration') + '/config/pr2_joint_position_controllers.yaml', default_namespace='/position_controllers'):
             rosparam.upload_params(ns,params)
         position_controllers = [f"position_controllers/{j}_position_controller" for j in all_joints]
+
+        trajectory_controllers =  set(self.R[jg.group]['trajectory'] for jg in joint_groups)
 
         self.ensure_controllers(
             calibration_controllers_for_refine +
             position_controllers +
-            [self.R[jg.group]['trajectory'] for jg in joint_groups],
+            trajectory_controllers,
             start= False
         )
 
@@ -322,6 +333,8 @@ class RefineStartupCalibration:
 
         for jg in joint_groups:
             self.refine_group_joints(jg.group, jg.joints)
+
+        self.switch_to_trajectory_controller(jg.group for jg in joint_groups)
 
         self.unload_controllers(calibration_controllers_for_refine + position_controllers + set_zero_offset_controllers)
 
