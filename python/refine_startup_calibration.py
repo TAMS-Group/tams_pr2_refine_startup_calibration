@@ -293,6 +293,7 @@ class RefineStartupCalibration:
     def run(self, goal):
         joint_groups = self.joints_from_goal(goal)
         joints = [j for g in joint_groups for j in g.joints]
+        all_joints = [j for g in joint_groups for j in self.R[g.group]['joints'] + self.R[g.group]['extra_joints']]
 
         rpack = rospkg.RosPack()
 
@@ -308,7 +309,7 @@ class RefineStartupCalibration:
 
         for params, ns in rosparam.load_file(rpack.get_path('tams_pr2_controller_configuration') + '/config/pr2_joint_position_controllers.yaml', namespace='/position_controllers')
             rosparam.upload_params(ns,params)
-        position_controllers = [f"position_controllers/{j}_position_controller" for j in joints]
+        position_controllers = [f"position_controllers/{j}_position_controller" for j in all_joints]
 
         self.ensure_controllers(
             calibration_controllers_for_refine +
