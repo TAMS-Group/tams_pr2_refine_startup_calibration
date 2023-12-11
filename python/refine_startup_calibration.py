@@ -1,23 +1,34 @@
 #!/usr/bin/env python
 
-from typing import Any, List
+from typing import Any, List, NamedTuple
 
+import numpy as np
 import rosparam
 import rospkg
 import rospy
 import sys
+import threading
 
+from actionlib import SimpleActionClient
+from control_msgs.msg import JointTrajectoryAction, JointTrajectoryGoal, FollowJointTrajectoryResult
 from pr2_mechanism_msgs.srv import LoadController, UnloadController, SwitchController, SwitchControllerRequest, ListControllers
-from std_msgs.msg import String
-from tams_pr2_refine_startup_calibration.srv import SetZeroOffset
+from std_msgs.msg import String as StringMsg, Float32 as Float32Msg
+from tams_pr2_refine_startup_calibration.srv import SetZeroOffset, SetZeroOffsetRequest
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 class Say:
     def __init__(self):
-        self.say_pub = rospy.Publisher('/say', String, queue_size=10)
+        self.say_pub = rospy.Publisher('/say', StringMsg, queue_size=10)
 
     def __call__(self, string) -> Any:
-        self.say_pub.publish(String(data=string))
+        self.say_pub.publish(StringMsg(data=string))
+        rospy.sleep(rospy.Duration(1.0))
+
 say = Say()
+
+class GroupWithJoints(NamedTuple):
+    group: str
+    joints: List[str]
 
 class RefineStartupCalibration:
     R = {
@@ -57,35 +68,52 @@ class RefineStartupCalibration:
         },
     }
 
+    CALIBRATION_GROUP_POSITIONS = {
+        'l_shoulder_pan': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    }
+
     def __init__(self):
         self.load_controller = rospy.ServiceProxy('/pr2_controller_manager/load_controller', LoadController)
         self.unload_controller = rospy.ServiceProxy('/pr2_controller_manager/unload_controller', UnloadController)
         self.switch_controller = rospy.ServiceProxy('/pr2_controller_manager/switch_controller', SwitchController)
-        self.list_controllers = rospy.ServiceProxy('/pr2_controller_manager/list_controllers', ListControllers)
+        self._list_controllers = rospy.ServiceProxy('/pr2_controller_manager/list_controllers', ListControllers)
 
-    def ensure_controllers(self, controllers, *, start) -> List[str]:
+        self.trajectory_clients = {}
+        for group in self.R:
+            self.trajectory_clients[group] = SimpleActionClient(f"/{self.R[group]['trajectory']}/joint_trajectory_action", JointTrajectoryAction)
+
+    def list_controllers(self):
+        state = self._list_controllers()
+        if not state.ok:
+            rospy.logfatal("Failed to list controllers")
+            sys.exit(1)
+        return dict(zip(state.controllers, state.state))
+
+    def ensure_controllers(self, controllers, *, start : bool) -> List[str]:
         '''
         Make sure that the given controllers are loaded
         '''
+        controller_state = self.list_controllers()
         sleep = False
         for c in controllers:
-            if c not in state.controllers:
+            if c not in controller_state:
                 if not self.load_controller(name= c).ok:
                     rospy.logfatal(f"Failed to load controller {c}")
                     sys.exit(1)
                 sleep= True
         if sleep:
+            # give pr2_controller_manager some time to load the controllers / that should not be necessary...
             rospy.sleep(rospy.Duration(0.5))
 
-        state = self.list_controllers()
+        controller_state = self.list_controllers()
         for c in controllers:
-            if c not in state.controllers:
+            if c not in controller_state:
                 rospy.logfatal(f"controller {c} not loaded after loading it")
                 sys.exit(1)
 
         if start:
             req = SwitchControllerRequest(
-                    start_controllers= [c for c in controllers if state.state[state.controllers.index(c)] != 'running'],
+                    start_controllers= [c for c in controllers if controller_state[c] != 'running'],
                     stop_controllers= [],
                     strictness= SwitchControllerRequest.BEST_EFFORT)
             if not self.switch_controller(req).ok:
@@ -96,11 +124,11 @@ class RefineStartupCalibration:
         '''
         Make sure that the given controllers are unloaded
         '''
-        state = self.list_controllers()
+        controller_state = self.list_controllers()
 
-        controllers = [c for c in controllers if c in state.controllers]
+        controllers = [c for c in controllers if c in controller_state]
 
-        to_stop = [c for c in controllers if state.state[state.controllers.index(c)] == 'running']
+        to_stop = [c for c in controllers if controller_state[c] == 'running']
         if to_stop:
             req = SwitchControllerRequest(
                     start_controllers= [],
@@ -110,52 +138,131 @@ class RefineStartupCalibration:
                 rospy.logfatal(f"Failed to stop controllers {req.stop_controllers}")
                 sys.exit(1)
         for c in controllers:
-            if c in state.controllers:
+            if c in controller_state:
                 if not self.unload_controller(name= c).ok:
                     rospy.logfatal(f"Failed to unload controller {c}")
                     sys.exit(1)
 
-    @staticmethod
-    def joints_from_goal(goal):
+    def joints_from_goal(self, goal) -> List[GroupWithJoints]:
         '''
         figure out which joints to refine from string goal (e.g. 'all', 'left_arm', 'r_shoulder_pan_joint')
         '''
         all_joints = [j for group in RefineStartupCalibration.R for j in RefineStartupCalibration.R[group]['joints']]
 
-        joints = []
+        joints_by_group : GroupWithJoints = []
         for g in goal:
             if g == 'all':
-                joints.extend(all_joints)
+                joints_by_group.extend([
+                    GroupWithJoints('left_arm', self.R['left_arm']['joints'][:]),
+                    GroupWithJoints('right_arm', self.R['right_arm']['joints'][:]),
+                    GroupWithJoints('head', self.R['head']['joints'][:]),
+                    ])
             elif g in RefineStartupCalibration.R:
-                joints.extend(RefineStartupCalibration.R[goal]['joints'])
+                joints_by_group.append(GroupWithJoints(g, RefineStartupCalibration.R[g]['joints'][:]))
             elif goal in all_joints:
-                joints.append(goal)
+                if joints_by_group and goal in self.R[joints_by_group[-1].group]['joints']:
+                    joints_by_group[-1].joints.append(goal)
+                else:
+                    g = next(g for g in RefineStartupCalibration.R if goal in RefineStartupCalibration.R[g]['joints'])
+                    joints_by_group.append(GroupWithJoints(g, [goal]))
             else:
                 rospy.logfatal(f"Unknown goal to refine: {goal}")
                 sys.exit(1)
 
-        return joints
+        return joints_by_group
 
     def switch_to_position_controllers(self, group):
+        controller_state = self.list_controllers()
+
+        position_controllers = [f"position_controllers/{j}_position_controller" for j in self.R[group]['joints']]
+        to_start = [c for c in position_controllers if controller_state[c] != 'running']
+        to_stop = [self.R[group]['trajectory']] if controller_state[self.R[group]['trajectory']] == 'running' else []
+
         if not self.switch_controller(
-            start_controllers= [f"position_controllers/{j}_position_controller" for j in self.R[group]['joints']],
-            stop_controllers= [self.R[group]['trajectory']],
+            start_controllers= to_start,
+            stop_controllers= to_stop,
             strictness= SwitchControllerRequest.STRICT
         ).ok:
             rospy.logfatal(f"Failed to switch {group} to position controllers")
             sys.exit(1)
 
     def switch_to_trajectory_controller(self, group):
-        state = self.list_controllers()
+        controller_state = self.list_controllers()
         position_controllers = [f"position_controllers/{j}_position_controller" for j in self.R[group]['joints']]
-        to_stop = [c for c in position_controllers if c in state.controllers and state.state[state.controllers.index(c)] == 'running']
+
+        to_stop = [c for c in position_controllers if controller_state[c] == 'running']
+        to_start = [self.R[group]['trajectory']] if controller_state[self.R[group]['trajectory']] != 'running' else []
 
         if not self.switch_controller(
-            start_controllers= [self.R[group]['trajectory']],
+            start_controllers= to_start,
             stop_controllers= to_stop,
             strictness= SwitchControllerRequest.STRICT
         ).ok:
             rospy.logfatal(f"Failed to switch {group} to trajectory controller")
+            sys.exit(1)
+
+    def move_to_group_positions(self, group, positions):
+        joints = self.R[group]['joints'] + self.R[group]['extra_joints']
+        if len(positions) != len(joints):
+            rospy.logfatal(f"Number of positions ({len(joints)}) does not match number of joints for {group}: {joints}")
+            sys.exit(1)
+
+        self.switch_to_trajectory_controller(group)
+        rospy.sleep(rospy.Duration(1.0))
+
+        jt = JointTrajectory()
+        jt.joint_names = joints
+        jt.points.append(JointTrajectoryPoint(positions= positions, time_from_start= rospy.Duration(2.0)))
+        self.trajectory_clients[group].send_goal(JointTrajectoryGoal(trajectory= jt))
+        result = self.trajectory_clients[group].wait_for_result().result
+        if result.error_code != FollowJointTrajectoryResult.SUCCESSFUL:
+            rospy.logerr(f"Failed to move {group} to positions {positions}")
+            say(f"Ooops, group {group} could not move. Please press enter to continue nevertheless.")
+            input("Press enter to continue...")
+
+    def start_calibration_controller_for_refine(self, joint):
+        if not self.switch_controller(
+            start_controllers= [f"calibration_controllers_for_refine/{joint}"],
+            stop_controllers= [f"position_controllers/{joint}_position_controller"],
+            strictness= SwitchControllerRequest.STRICT
+        ).ok:
+            rospy.logfatal(f"Failed to start calibration controller for {joint}")
+            sys.exit(1)
+
+    def refine_joint(self, joint):
+        # start calibration controller and wait for /calibrated message
+
+        stop_refinement = threading.Event()
+        new_zero_offset = threading.Event()
+        zero_offsets = []
+
+        def zero_offset_cb(msg):
+            nonlocal new_zero_offset, zero_offsets
+            zero_offsets.append(msg.data)
+            new_zero_offset.set()
+
+        def repeated_refinement():
+            nonlocal stop_refinement, new_zero_offset, zero_offsets
+            sub = rospy.Subscriber(f"calibration_controllers_for_refine/{joint}/zero_offset", Float32Msg, callback= zero_offset_cb)
+            while not stop_refinement.is_set():
+                self.start_calibration_controller_for_refine(joint)
+
+                # wait for new zero_offset
+                while not new_zero_offset.wait(timeout= .1):
+                    if rospy.is_shutdown():
+                        raise Exception("Interrupted")
+                    if stop_refinement.is_set():
+                        break
+                new_zero_offset.clear()
+            sub.unregister()
+
+        repeated_refinement_thread = threading.Thread(target= repeated_refinement).start()
+        input("Press enter when enough samples are collected...")
+        stop_refinement.set()
+        repeated_refinement_thread.join()
+
+        if not rospy.ServiceProxy(f"set_zero_offset/{joint}", SetZeroOffset)(SetZeroOffsetRequest(offset= np.mean(zero_offsets))):
+            rospy.logfatal(f"Failed to set zero offset for {joint}")
             sys.exit(1)
 
     def refine_group_joints(self, group, joints):
@@ -163,33 +270,33 @@ class RefineStartupCalibration:
         refine the given joints of the given group
         '''
 
-        self.switch_to_position_controllers(group)
-
         for j in joints:
             say(f"Refine joint {joints}")
+            self.switch_to_trajectory_controller(group)
+            if j not in self.CALIBRATION_GROUP_POSITIONS:
+                rospy.logfatal(f"Missing group calibration position for {j}. Cannot refine the joint.")
+                sys.exit(1)
 
-            # TODO: go on here
+            group_position_for_j = self.CALIBRATION_GROUP_POSITIONS[j]
+            say(f"Will move {group} to calibration position for {j}. Please press enter.")
+            rospy.loginfo(f"Will move {group} to calibration position for {j}.")
+            input("Press enter to continue...")
+            rospy.sleep(rospy.Duration(1.0))
 
-            # lookup joint positions of group for refinement of j
+            self.move_to_group_positions(group, group_position_for_j)
+            self.switch_to_position_controllers(group)
 
-            # set position controllers to these positions
-
-            # activate calibration controller repeatedly until user commits
-
-            self.set_zero_offset = rospy.ServiceProxy(f'/set_zero_offset/{j}/set_zero_offset', SetZeroOffset)
-            mean = 0.0
-            self.set_zero_offset(mean)
+            self.refine_joint(j)
 
         self.switch_to_trajectory_controller(group)
 
-    def do(self, goal):
-
-        joints = self.joints_from_goal(goal)
+    def run(self, goal):
+        joint_groups = self.joints_from_goal(goal)
+        joints = [j for g in joint_groups for j in g.joints]
 
         rpack = rospkg.RosPack()
 
         config_path = rpack.get_path('tams_pr2_refine_startup_calibration')
-
 
         for params, ns in rosparam.load_file(f"{config_path}/config/pr2_set_zero_offset_controllers.yaml", namespace='set_zero_offset'):
             rosparam.upload_params(ns,params)
@@ -206,15 +313,14 @@ class RefineStartupCalibration:
         self.ensure_controllers(
             calibration_controllers_for_refine +
             position_controllers +
-            [traj_controller for group in self.CONTROLLERS for traj_controller in self.CONTROLLERS[group]['trajectory']],
+            [self.R[jg.group]['trajectory'] for jg in joint_groups],
             start= False
         )
 
         self.ensure_controllers(set_zero_offset_controllers, start= True)
 
-        for group in self.R:
-            group_joints = [j for j in self.R[group]['joints'] if j in joints]
-            self.refine_group_joints(group, group_joints)
+        for jg in joint_groups:
+            self.refine_group_joints(jg.group, jg.joints)
 
         self.unload_controllers(calibration_controllers_for_refine + position_controllers + set_zero_offset_controllers)
 
@@ -223,7 +329,7 @@ if __name__ == "__main__":
     sys.argv = rospy.myargv(argv=sys.argv)
 
     if len(sys.argv) < 2:
-        rospy.logerr("Usage: refine_startup_calibration.py <all/left_arm/right_arm/head/joint_name>")
+        rospy.logfatal("Usage: refine_startup_calibration.py <all/left_arm/right_arm/head/joint_name> [...]")
         sys.exit(1)
 
-    RefineStartupCalibration().do(sys.argv[1:])
+    RefineStartupCalibration().run(sys.argv[1:])
