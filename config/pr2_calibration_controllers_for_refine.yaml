@@ -10,6 +10,7 @@ r_shoulder_pan:
     i: 0.5
     d: 0
     i_clamp: 2.0
+    antiwindup: true
 r_shoulder_lift:
   type: pr2_calibration_controllers/JointCalibrationController
   joint: r_shoulder_lift_joint
@@ -22,6 +23,7 @@ r_shoulder_lift:
     i: 0.6
     d: 0.0
     i_clamp: 10
+    antiwindup: true
 r_upper_arm_roll:
   type: pr2_calibration_controllers/JointCalibrationController
   joint: r_upper_arm_roll_joint
@@ -34,6 +36,7 @@ r_upper_arm_roll:
     i: 1.5
     d: 0
     i_clamp: 4
+    antiwindup: true
 r_elbow_flex:
   type: pr2_calibration_controllers/JointCalibrationController
   joint: r_elbow_flex_joint
@@ -46,6 +49,7 @@ r_elbow_flex:
     i: 0.8
     d: 0
     i_clamp: 6.0
+    antiwindup: true
 r_forearm_roll:
   type: pr2_calibration_controllers/JointCalibrationController
   joint: r_forearm_roll_joint
@@ -58,6 +62,7 @@ r_forearm_roll:
     i: 1.0
     d: 0.0
     i_clamp: 12.0
+    antiwindup: true
 
 l_shoulder_pan:
   type: pr2_calibration_controllers/JointCalibrationController
@@ -68,9 +73,10 @@ l_shoulder_pan:
   tics_moving_past_calibration_reading: 1500
   pid:
     p: 7
-    i: 0.5
+    i: 1.0
     d: 0
-    i_clamp: 2.0
+    i_clamp: 1.0
+    antiwindup: true
 l_shoulder_lift:
   type: pr2_calibration_controllers/JointCalibrationController
   joint: l_shoulder_lift_joint
@@ -83,6 +89,7 @@ l_shoulder_lift:
     i: 0.6
     d: 0.0
     i_clamp: 10
+    antiwindup: true
 l_upper_arm_roll:
   type: pr2_calibration_controllers/JointCalibrationController
   joint: l_upper_arm_roll_joint
@@ -92,9 +99,10 @@ l_upper_arm_roll:
   tics_moving_past_calibration_reading: 1500
   pid:
     p: 8
-    i: 1.5
+    i: 1
     d: 0
-    i_clamp: 4
+    i_clamp: 1
+    antiwindup: true
 l_elbow_flex:
   type: pr2_calibration_controllers/JointCalibrationController
   joint: l_elbow_flex_joint
@@ -103,10 +111,11 @@ l_elbow_flex:
   velocity: 0.20 # keep process value at lowest reported velocity
   tics_moving_past_calibration_reading: 1500
   pid:
-    p: 5
-    i: 0.8
+    p: 10
+    i: 2
     d: 0
-    i_clamp: 6.0
+    i_clamp: 2.0
+    antiwindup: true
 l_forearm_roll:
   type: pr2_calibration_controllers/JointCalibrationController
   joint: l_forearm_roll_joint
@@ -116,9 +125,10 @@ l_forearm_roll:
   tics_moving_past_calibration_reading: 1500
   pid:
     p: 8.0
-    i: 1.0
+    i: 4.0
     d: 0.0
-    i_clamp: 12.0
+    i_clamp: 2.0
+    antiwindup: true
 
 #################################################################
 ## TODO: possibly include some below, but they are less crucial #
