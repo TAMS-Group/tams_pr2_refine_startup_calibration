@@ -70,8 +70,8 @@ class RefineStartupCalibration:
 
     # group positions for calibrating each single joint. Order is as in R[group]['joints']+R[group]['extra_joints']
     CALIBRATION_GROUP_POSITIONS = {
-        'l_shoulder_pan': [-.25, 1.2, 0.0, -2.0, 0.0, -1.57, 0.0],
-        'l_shoulder_lift': [0.0, 0.6, 0.0, -2.0, 3.13, -1.57, 0.0],
+        'l_shoulder_pan': [.4, 1.2, 0.0, -2.0, 0.0, -1.57, 0.0],
+        'l_shoulder_lift': [0.0, 0.4, 0.0, -2.0, 3.13, -1.57, 0.0],
         'l_upper_arm_roll': [0.0, 0.0, 1.9, -1.2, 0.0, -1.57, 0.0],
         'l_elbow_flex': [0.0, 1.0, 0.0, -0.5, 0.0, -1.57, 0.0],
         'l_forearm_roll': [0.0, 0.0, 1.57, -1.0, 0.5, -1.57, 0.0],
