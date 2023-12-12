@@ -41,7 +41,7 @@ class RefineStartupCalibration:
                 'l_elbow_flex',
                 'l_forearm_roll',
             ],
-            # refinement is not supported, but they need position controllers and targets
+            # refinement is not supported, but they need position controllers and targets / appended to the end of the vector
             'extra_joints': [
                 'l_wrist_flex',
                 'l_wrist_roll',
@@ -68,6 +68,7 @@ class RefineStartupCalibration:
         },
     }
 
+    # group positions for calibrating each single joint. Order is as in R[group]['joints']+R[group]['extra_joints']
     CALIBRATION_GROUP_POSITIONS = {
         'l_shoulder_pan': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     }
