@@ -121,7 +121,7 @@ l_forearm_roll:
   joint: l_forearm_roll_joint
   actuator: l_forearm_roll_motor
   transmission: r_forearm_roll_trans
-  velocity: 0.1 # lowest reported velocity
+  velocity: 0.2
   tics_moving_past_calibration_reading: 1500
   pid:
     p: 8.0
