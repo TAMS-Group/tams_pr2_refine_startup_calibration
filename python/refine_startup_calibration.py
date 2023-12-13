@@ -2,17 +2,18 @@
 
 from typing import Any, List, NamedTuple
 
-import numpy as np
+import pandas as pd
 import rosparam
 import rospkg
 import rospy
+import scipy.stats as stats
 import sys
 import threading
 
 from actionlib import SimpleActionClient
 from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal, FollowJointTrajectoryResult
 from pr2_mechanism_msgs.srv import LoadController, UnloadController, SwitchController, SwitchControllerRequest, ListControllers
-from std_msgs.msg import String as StringMsg, Float32 as Float32Msg
+from std_msgs.msg import String as StringMsg, Float32 as Float32Msg, Float32MultiArray
 from tams_pr2_refine_startup_calibration.srv import SetZeroOffset, SetZeroOffsetRequest
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
@@ -72,11 +73,11 @@ class RefineStartupCalibration:
     CALIBRATION_GROUP_POSITIONS = {
         'l_shoulder_pan': [.4, 1.2, 0.0, -2.0, 0.0, -1.57, 0.0],
         'l_shoulder_lift': [0.0, 0.4, 0.0, -2.0, 3.13, -1.57, 0.0],
-        'l_upper_arm_roll': [0.0, 0.0, 1.9, -1.2, 0.0, -1.57, 0.0],
-        'l_elbow_flex': [0.0, 1.0, 0.0, -0.5, 0.0, -1.57, 0.0],
-        'l_forearm_roll': [0.0, 0.0, 1.57, -1.0, 0.5, -1.57, 0.0],
+        'l_upper_arm_roll': [0.0, 0.0, 1.6, -1.2, 0.0, -1.57, 0.0],
+        'l_elbow_flex': [0.0, 1.0, 0.0, -1.0, 0.0, -1.57, 0.0],
+        'l_forearm_roll': [0.0, 0.0, 1.57, -1.0, -0.3, -1.57, 0.0],
 
-
+        # TODO: adjust group positions for smoother/faster calibration behavior
         'r_shoulder_pan': [-.25, 1.2, 0.0, -2.0, 0.0],
         'r_shoulder_lift': [0.0, 0.6, 0.0, -1.5, 0.0],
         'r_upper_arm_roll': [0.0, 0.0, -1.9, -1.57, 0.0],
@@ -92,6 +93,8 @@ class RefineStartupCalibration:
         self.unload_controller = rospy.ServiceProxy('/pr2_controller_manager/unload_controller', UnloadController)
         self.switch_controller = rospy.ServiceProxy('/pr2_controller_manager/switch_controller', SwitchController)
         self._list_controllers = rospy.ServiceProxy('/pr2_controller_manager/list_controllers', ListControllers)
+
+        self.pub_zero_offsets = rospy.Publisher('~zero_offsets', Float32MultiArray, queue_size= 1)
 
         self.trajectory_clients = {}
         for group in self.R:
@@ -216,7 +219,7 @@ class RefineStartupCalibration:
             rospy.logfatal(f"Failed to switch {group} to trajectory controller")
             sys.exit(1)
 
-    def move_to_calibration_position(self, group, joint):
+    def move_to_calibration_position(self, *, group, joint, duration):
         positions = self.CALIBRATION_GROUP_POSITIONS[joint]
 
         joints = self.R[group]['joints'] + self.R[group]['extra_joints']
@@ -231,7 +234,7 @@ class RefineStartupCalibration:
 
         jt = JointTrajectory()
         jt.joint_names = [f"{j}_joint" for j in joints]
-        jt.points.append(JointTrajectoryPoint(positions= positions, time_from_start= rospy.Duration(2.0)))
+        jt.points.append(JointTrajectoryPoint(positions= positions, time_from_start= rospy.Duration(duration)))
         self.trajectory_clients[group].send_goal(FollowJointTrajectoryGoal(trajectory= jt, goal_time_tolerance= rospy.Duration(5.0)))
         result = None
         if self.trajectory_clients[group].wait_for_result():
@@ -260,10 +263,13 @@ class RefineStartupCalibration:
         say(f"Refining {joint}.")
         zero_offsets = []
         new_zero_offset = threading.Event()
+        pub_zero_offsets = self.pub_zero_offsets
         def zero_offset_cb(msg):
-            nonlocal new_zero_offset, zero_offsets
+            nonlocal new_zero_offset, zero_offsets, pub_zero_offsets
             zero_offsets.append(msg.data)
+            pub_zero_offsets.publish(Float32MultiArray(data= zero_offsets))
             new_zero_offset.set()
+            print('.', end='', flush=True)
         sub = rospy.Subscriber(f"calibration_controllers_for_refine/{joint}/zero_offset", Float32Msg, callback= zero_offset_cb)
 
         stop_refinement = threading.Event()
@@ -276,27 +282,30 @@ class RefineStartupCalibration:
                     if rospy.is_shutdown():
                         rospy.loginfo('Shutting down')
                         sys.exit(1)
-                    # TODO: if no samples were collected, we HAVE to wait for the first one to leave the joint in a calibrated state
-                    if stop_refinement.is_set():
+                    # if no samples were collected, we HAVE to wait for the first one to leave the joint in a calibrated state
+                    if stop_refinement.is_set() and len(zero_offsets) > 0:
                         break
                 new_zero_offset.clear()
 
                 self.trigger_calibration_controller_during_refine(joint, start= False)
-                self.move_to_calibration_position(group, joint)
+                self.move_to_calibration_position(group= group, joint= joint, duration= 0.5)
                 self.switch_to_position_controllers(group)
-
         repeated_refinement_thread = threading.Thread(target= repeated_refinement)
         repeated_refinement_thread.start()
-        input("Press enter when enough samples are collected...")
+
+        input("Press enter once enough samples are collected")
         stop_refinement.set()
         repeated_refinement_thread.join()
         sub.unregister()
 
         rospy.loginfo(f"collected {len(zero_offsets)} measurements")
 
-        if len(zero_offsets) == 0:
-            rospy.logwarn(f"did not record any zero_offset measurements. Will not update zero offset for {joint}")
-        elif not rospy.ServiceProxy(f"set_zero_offset/{joint}/set_zero_offset", SetZeroOffset)(SetZeroOffsetRequest(offset= np.mean(zero_offsets))):
+        df = pd.DataFrame(zero_offsets, columns=['v'])
+        (mu, sigma) = stats.norm.fit(df['v'])
+        df['outlier'] = abs(df['v'] - mu) > 2*sigma
+        (mu, sigma) = stats.norm.fit(df['v'][~df['outlier']])
+
+        if not rospy.ServiceProxy(f"set_zero_offset/{joint}/set_zero_offset", SetZeroOffset)(SetZeroOffsetRequest(offset= mu)):
             rospy.logfatal(f"Failed to set averaged zero offset for {joint}")
             sys.exit(1)
 
@@ -317,7 +326,7 @@ class RefineStartupCalibration:
             rospy.loginfo(f"Will move {group} to calibration position for {j}.")
             input("Press enter to continue...")
 
-            self.move_to_calibration_position(group, j)
+            self.move_to_calibration_position(group= group, joint= j, duration= 2.0)
 
             self.switch_to_position_controllers(group)
 
