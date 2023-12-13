@@ -33,7 +33,7 @@ class OnlinePlot(PlotWindow):
 
     self.paused = False
 
-    rospy.init_node('zero_offset_histogram')
+    rospy.init_node('plot_zero_offsets')
     self.subscriber = rospy.Subscriber("refine_startup_calibration/zero_offsets", Float32MultiArray, self.plotResults, queue_size = 1)
     
     self.pauseButton.clicked.connect(self.pauseClicked)

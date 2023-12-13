@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <arg name="target" default="left_arm"/>
+
+    <node name="refine_startup_calibration" pkg="tams_pr2_refine_startup_calibration" type="refine_startup_calibration" args="$(arg target)"/>
+    <node name="plot_zero_offsets" pkg="tams_pr2_refine_startup_calibration" type="plot_zero_offsets" />
+</launch>
