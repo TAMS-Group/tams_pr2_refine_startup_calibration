@@ -1,3 +1,4 @@
+# TODO: tweak r_* controllers for even/fast initialization
 r_shoulder_pan:
   type: pr2_calibration_controllers/JointCalibrationController
   joint: r_shoulder_pan_joint
@@ -130,6 +131,32 @@ l_forearm_roll:
     i_clamp: 2.0
     antiwindup: true
 
+head_pan:
+ type: pr2_calibration_controllers/JointCalibrationController
+ actuator: head_pan_motor
+ joint: head_pan_joint
+ transmission: head_pan_trans
+ velocity: 0.2
+ pid:
+   p: 2.0
+   d: 0
+   i: 0.0
+   i_clamp: 1.0
+   antiwindup: true
+head_tilt:
+ type: pr2_calibration_controllers/JointCalibrationController
+ actuator: head_tilt_motor
+ joint: head_tilt_joint
+ transmission: head_tilt_trans
+ velocity: 0.4
+ pid:
+   p: 20.0
+   d: 0
+   i: 5.0
+   i_clamp: 20.0
+   antiwindup: true
+
+
 #################################################################
 ## TODO: possibly include some below, but they are less crucial #
 ## -- v4hn@20220808                                             #
@@ -175,26 +202,4 @@ l_forearm_roll:
 #    p: 0.3
 #    d: 0
 #    i: 0.1
-#    i_clamp: 1.0
-#cal_head_pan:
-#  type: pr2_calibration_controllers/JointCalibrationController
-#  actuator: head_pan_motor
-#  joint: head_pan_joint
-#  transmission: head_pan_trans
-#  velocity: 1.5
-#  pid:
-#    p: 2.0
-#    d: 0
-#    i: 0.0
-#    i_clamp: 1.0
-#cal_head_tilt:
-#  type: pr2_calibration_controllers/JointCalibrationController
-#  actuator: head_tilt_motor
-#  joint: head_tilt_joint
-#  transmission: head_tilt_trans
-#  velocity: 1.0
-#  pid:
-#    p: 20.0
-#    d: 0
-#    i: 5.0
 #    i_clamp: 1.0
