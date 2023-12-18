@@ -280,11 +280,8 @@ class RefineStartupCalibration:
 
                 while not new_zero_offset.wait(timeout= .1):
                     if rospy.is_shutdown():
-                        rospy.loginfo('Shutting down')
+                        rospy.logerr('Shutting down as requested. The joint might not be calibrated from here on.')
                         sys.exit(1)
-                    # if no samples were collected, we HAVE to wait for the first one to leave the joint in a calibrated state
-                    if stop_refinement.is_set() and len(zero_offsets) > 0:
-                        break
                 new_zero_offset.clear()
 
                 self.trigger_calibration_controller_during_refine(joint, start= False)
